@@ -3,11 +3,15 @@
 
 WINEPREFIX="$HOME/.wine-shar"
 WINEPREFIXTEXT="$(echo "$WINEPREFIX" | sed -e "s|^$HOME|~|g")"
-WINEARCH="win32"
 CHOICEERROR=false
 
+WINEALTPREFIX="${XDG_DATA_HOME:-$HOME/.local/share}/wineprefixes/wine-shar"
+WINEALTPREFIXLOC="$(echo "$WINEALTPREFIX" | sed -e "s|/wine-shar||g")"
+WINEALTPREFIXTEXT="$(echo "$WINEALTPREFIX" | sed -e "s|^$HOME|~|g")"
+WINEALTPREFIXLOCTEXT="$(echo "$WINEALTPREFIXLOC" | sed -e "s|^$HOME|~|g")"
+
 # puts terminal into alternative view, separate from other commands etc.
-tput smcup 
+tput smcup
 
 # returns to main terminal view on script exit. First time I've ever used 'trap' so probably overkill.
 trap 'tput rmcup; exit 0' 0
@@ -22,77 +26,21 @@ while true; do
 	"effectively automating the manual method. This script " "\033[1mWILL NOT\033[0m" " install SHAR," \
 	"the mod launcher or LiveSplit."
 
-	printf '%s%b%s\n%s\n' \
-	"For Linux beginners, you should probably use Lutris instead. This " "\033[1mwill\033[0m" " set up" \
-	"the Wine prefix and install SHAR too."
-
-	printf '%s\n\n%s\n%s\n%s\n\n' \
-	"Do you want instructions on how to install using Lutris?" \
-	"1) Lutris instructions" \
-	"2) Continue automated Wine prefix setup" \
-	"3) Quit"
-
-	[ "$CHOICEERROR" = true ] && printf '%s\n' \
-	"Invalid input, enter \"1\", \"2\" or \"3\"!"
-
-	printf '%s' \
-	"Please select [1-3]: "
-
-	read -r ANSWER
-	case $ANSWER in
-		1)
-			clear
-			printf '%s\n%s\n%s\n%s\n%s\n%s\n\n' \
-			"1) Install Lutris (https://lutris.net/downloads)" \
-			"2) Open it and click the \"+\" icon on the top-left and select \"Search the Lutris" \
-			"   site for installers\"" \
-			"3) Search for \"The Simpsons: Hit & Run\"" \
-			"4) Choose \"PC Mod Launcher v1.26.1\". It should then install SHAR + the mod" \
-			"   launcher"
-
-			printf '%s\n%s\n%s\n%s\n\n' \
-			"To run LiveSplit, click SHAR in your Lutris menu (when it's installed) and," \
-			"next to \"Play\" at the bottom-left, click the arrow to the right of the Wine" \
-			"logo button, then click \"Run EXE inside Wine prefix\", then find your" \
-			"'LiveSplit.exe'"
-
-			printf '%s\n' \
-			"Press <Enter> to exit"
-			read -r EXITINPUT
-
-			exit 0 ;;
-		2)
-			CHOICEERROR=false
-			break ;;
-		3)
-			tput rmcup
-			exit 0 ;;
-		*)
-			CHOICEERROR=true
-			clear ;; # improvements more than welcome.
-	esac
-done
-
-clear
-while true; do
 	printf '%s\n%s\n\n' \
 	"Obviously, you will need Wine to be installed on your system to continue. Wine" \
 	"can be installed on:"
 
-	printf '%s\n%s\n%s\n%s\n%s\n\n\n' \
+	printf '%s\n%s\n%s\n\n\n' \
 	"Ubuntu: https://wiki.winehq.org/Ubuntu" \
 	"Fedora: https://wiki.winehq.org/Fedora" \
-	"Arch-based (Arch, Manjaro etc., \"multilib\" needs to be enabled in" \
-	"\"/etc/pacman.conf\"):" \
-	"run \"sudo pacman -S wine\" in terminal"
+	"Arch-based (Arch, Manjaro etc.): run \"sudo pacman -S wine\" in terminal"
 
 	printf '%s\n\n' \
 	"You will also need Winetricks. This can be installed on:"
 
-	printf '%s\n%s\n%s\n%s\n%s\n\n\n' \
-	"Ubuntu: run \"sudo apt install winetricks\" (???, I don't know)" \
-	"Arch-based (ditto \"multilib\" from wine install):" \
-	"run \"sudo pacman -S winetricks\" in terminal" \
+	printf '%s\n%s\n%s\n%s\n\n\n' \
+	"Ubuntu: run \"sudo apt install winetricks\"" \
+	"Arch-based: run \"sudo pacman -S wine\" in terminal" \
 	"If your distro is not mentioned, it's because I don't know how installation" \
 	"works on it. Feel free to suggest installation methods for other distros!"
 
@@ -116,9 +64,57 @@ while true; do
 			exit 0 ;;
 		*)
 			CHOICEERROR=true
-			clear ;; # improvements more than welcome.
+			clear ;;
 	esac
 done
+
+if [ -n "$XDG_DATA_HOME" ] || [ -d "$HOME/.local/share" ]; then
+	while true; do
+		printf '\n%s\n%s\n%s\n\n\n' \
+			"This script will set up a Wine prefix at '$WINEPREFIXTEXT'. Alternatively, you" \
+			"can set it up in '$WINEALTPREFIXTEXT'. This is" \
+			"considered cleaner as it won't clog up your home directory."
+
+		if [ "$CHOICEERROR" = true ]; then
+			printf '%s\n' \
+			"Invalid input, enter \"Y\" or \"N\"!"
+		else
+			printf '%s' \
+			"Use '$WINEALTPREFIXLOCTEXT'? [Y/n] "
+		fi
+
+		read -r ANSWER
+		case $ANSWER in
+			[Yy][Ee][Ss]|[Yy])
+				CHOICEERROR=false
+				if [ ! -d "$WINEALTPREFIXLOC" ]; then
+					mkdir "$WINEALTPREFIXLOC" 2>&1 1>/dev/null
+				fi
+
+				WINEPREFIX="$WINEALTPREFIX"
+				WINEPREFIXTEXT="$WINEALTPREFIXTEXT"
+
+				if [ ! -d "$WINEALTPREFIXLOC" ]; then
+					printf "%s\n" \
+						"'$WINEALTPREFIXLOCTEXT' doesn't exist/could not be created!"
+
+					printf '%s\n' \
+					"Press <Enter> to exit"
+					read -r EXITINPUT
+
+					exit 1
+				fi
+
+
+				break ;;
+			[Nn][Oo]|[Nn])
+				break ;;
+			*)
+				CHOICEERROR=true
+				clear ;;
+		esac
+	done
+fi
 
 if [ ! -d "$WINEPREFIX" ]; then
 	printf '\n%s\n' \
@@ -165,17 +161,36 @@ else
 	exit 1
 fi
 
-printf '%s\n%s\n%s\n' \
-"Installing .NET 4.6.1" \
-"This may take a while (at least 5-10+ minutes)" \
-"You may get some prompts to click on"
+printf '%s\n' \
+"Installing corefonts..." \
 
-if winetricks -q -f dotnet461 1>/dev/null 2>/dev/null ; then # remove "#>/dev/null" for more verbose output.
+if winetricks -q -f corefonts 1>/dev/null 2>/dev/null; then # remove "#>/dev/null" for more verbose output.
 	printf '%s\n\n' \
-	"Installed .NET 4.6.1"
+	"Installed corefonts!"
 else
+	printf '%s\n%s\n%s\n\n' \
+	"corefonts installation failed!" \
+	"Deleting '$WINEPREFIXTEXT' and re-running this script may help, but make sure you" \
+	"have nothing important in '$WINEPREFIXTEXT'!"
+
+	printf '%s\n' \
+	"Press <Enter> to exit"
+	read -r EXITINPUT
+
+	exit 1
+fi
+
+printf '%s\n' \
+"Installing GDI+..." \
+
+if winetricks -q -f gdiplus 1>/dev/null 2>/dev/null; then # remove "#>/dev/null" for more verbose output.
 	printf '%s\n\n' \
-	".NET 4.6.1 installation failed!"
+	"Installed GDI+!"
+else
+	printf '%s\n%s\n%s\n\n' \
+	"GDI+ installation failed!" \
+	"Deleting '$WINEPREFIXTEXT' and re-running this script may help, but make sure you" \
+	"have nothing important in '$WINEPREFIXTEXT'!"
 
 	printf '%s\n' \
 	"Press <Enter> to exit"
@@ -205,14 +220,33 @@ else
 	exit 1
 fi
 
-printf '%s\n%s\n%s\n\n' \
-"Prefix fully set up! To run SHAR properly, format your input like below" \
-"(replace text in [] and remove []):" \
-"WINEPREFIX=$WINEPREFIXTEXT wine [PATH-TO-MOD-LAUNCHER]"
+printf '%s\n%s\n%s\n\n%s\n' \
+"Installing .NET 4.6.1" \
+"You may get some prompts to click on" \
+"If you don't have enough disk space, installation may fail" \
+"This may take a while (at least 5-10+ minutes)..."
+
+if winetricks -q -f dotnet461 1>/dev/null 2>/dev/null ; then # remove "#>/dev/null" for more verbose output.
+	printf '%s\n\n' \
+	"Installed .NET 4.6.1"
+else
+	printf '%s\n\n' \
+	".NET 4.6.1 installation failed!"
+
+	printf '%s\n' \
+	"Press <Enter> to exit"
+	read -r EXITINPUT
+
+	exit 1
+fi
 
 printf '%s\n%s\n%s\n\n' \
-"To run LiveSplit, run (ditto above with []):" \
-"WINEPREFIX=$WINEPREFIXTEXT wine [PATH-TO-LIVESPLIT]" \
+"Prefix fully set up! To run SHAR properly, run the command below:" \
+"WINEPREFIX=$WINEPREFIXTEXT wine <PATH-TO-MOD-LAUNCHER>"
+
+printf '%s\n%s\n%s\n\n' \
+"To run LiveSplit, run:" \
+"WINEPREFIX=$WINEPREFIXTEXT wine <PATH-TO-LIVESPLIT>" \
 "(it is best pracice to run LiveSplit after SHAR has opened)"
 
 printf '%s\n%s\n\n' \
