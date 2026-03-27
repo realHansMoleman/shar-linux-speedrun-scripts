@@ -3,7 +3,7 @@
 
 This is a repository containing scripts for setting up some stuff for speedrunning SHAR (The Simpsons: Hit & Run) for Linux **but will not install SHAR specifically**. Non-speedrunners may also get some use out of these scripts.
 
-While these scripts won't install SHAR, they can be used to set up Wine prefixes for SHAR speedrunning, as well as creating .desktop files and shell scripts to launch [LiveSplit](https://github.com/LiveSplit)/[Lucas's Mod Launcher](https://donutteam.com/downloads/4/).
+While these scripts won't install SHAR, they can be used to set up Wine prefixes for SHAR speedrunning, as well as creating .desktop files and shell scripts to launch [LiveSplit](https://github.com/LiveSplit)/[Lucas' Mod Launcher](https://donutteam.com/downloads/4/).
 
 I plan to implement LiveSplit installation at some point.
 
